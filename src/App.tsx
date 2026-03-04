@@ -5,6 +5,7 @@ import { ConnectionsTable } from './components/ConnectionsTable'
 import { FieldWork } from './components/FieldWork'
 import { ControlPanel } from './components/ControlPanel'
 import { ImportCSV } from './components/ImportCSV'
+import { DiscrepanciesView } from './components/DiscrepanciesView'
 import { useAppStore } from './store/appStore'
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
       {view === 'fieldwork' && <FieldWork />}
       {view === 'control' && <ControlPanel />}
       {view === 'import' && <ImportCSV />}
+      {view === 'discrepancies' && <DiscrepanciesView />}
     </Layout>
   )
 }

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Network, Cable, Upload, Wrench, ClipboardCheck } from 'lucide-react'
+import { LayoutDashboard, Network, Cable, Upload, Wrench, ClipboardCheck, AlertTriangle } from 'lucide-react'
 import { useAppStore } from '../store/appStore'
 import type { ViewName } from '../types'
 
@@ -7,8 +7,9 @@ const NAV_ITEMS: { view: ViewName; label: string; icon: typeof LayoutDashboard; 
   { view: 'dps', label: 'Verteilerpunkte', icon: Network, section: 'Cliente' },
   { view: 'connections', label: 'Anschlüsse', icon: Cable },
   { view: 'fieldwork', label: 'Feldberichte', icon: Wrench, section: 'Campo' },
-  { view: 'control', label: 'Control', icon: ClipboardCheck },
-  { view: 'import', label: 'CSV Import', icon: Upload, section: 'System' },
+  { view: 'discrepancies', label: 'Discrepancias', icon: AlertTriangle },
+  { view: 'control', label: 'Control', icon: ClipboardCheck, section: 'Sistema' },
+  { view: 'import', label: 'CSV Import', icon: Upload },
 ]
 
 export function Sidebar() {
@@ -50,7 +51,7 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-slate-700 px-5 py-3 text-[11px] text-slate-500">
-        Glasfaser Tracker v1.0
+        Glasfaser Tracker v1.1
       </div>
     </aside>
   )

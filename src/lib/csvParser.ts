@@ -102,7 +102,7 @@ async function parseAndImportCSV(file: File): Promise<ParseResult> {
           reject(err)
         }
       },
-      error: (err) => reject(err),
+      error: (err: Error) => reject(err),
     })
   })
 }
@@ -255,7 +255,7 @@ async function importFieldBlowingsRA(rows: Record<string, string>[]) {
   // Store as field blowings with type indicator (no DP, no street)
   const existing = await db.fieldBlowings.toArray()
   // Keep RD blowings, only clear RA ones (those without a DP)
-  const rdIds = existing.filter(b => b.dp).map(b => b.id!).filter(Boolean)
+  // const rdIds = existing// .filter(b => b.dp).map(b => b.id!).filter(Boolean)
 
   // Delete only RA entries (those without DP)
   const raIds = existing.filter(b => !b.dp && !b.kaCliente).map(b => b.id!).filter(Boolean)

@@ -45,8 +45,8 @@ export function ConnectionsTable() {
     }
 
     result.sort((a, b) => {
-      const aVal = (a as Record<string, unknown>)[sortCol]
-      const bVal = (b as Record<string, unknown>)[sortCol]
+      const aVal = ((a as unknown) as Record<string, unknown>)[sortCol]
+      const bVal = ((b as unknown) as Record<string, unknown>)[sortCol]
       if (typeof aVal === 'string' && typeof bVal === 'string') {
         return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)
       }

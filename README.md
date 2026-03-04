@@ -1,73 +1,67 @@
-# React + TypeScript + Vite
+# Glasfaser Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![Deploy](https://github.com/jarl9801/glasfaser-tracker/actions/workflows/deploy.yml/badge.svg)](https://github.com/jarl9801/glasfaser-tracker/deployments)
 
-Currently, two official plugins are available:
+Tracker de proyectos de fibra óptica (Glasfaser) para gestión de instalaciones, reportes de campo y seguimiento de progreso.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+🔗 **Demo en vivo:** https://jarl9801.github.io/glasfaser-tracker
 
-## React Compiler
+## Características
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- 📊 **Dashboard** con estadísticas en tiempo real y gráficos de progreso
+- 📁 **Importación multi-formato** (CSV/XLSX) desde 5 fuentes diferentes:
+  - DP-Export (datos de distribución)
+  - Anschluss-Export (conexiones de clientes)
+  - Soplado RD (reportes de campo - 6/12/24 fibras)
+  - Soplado RA (reportes de campo - 44/96/144/288 fibras)
+  - Fusiones DP (reportes de fusiones)
+- 🔍 **Búsqueda y filtros** avanzados por POP, DP, calle, estado
+- 🌐 **Normalización automática** de datos:
+  - Matching fuzzy de calles (español → alemán)
+  - Mapeo de colores (español → alemán)
+  - Normalización de DP y KA
+- 📱 **PWA** - Funciona offline, instalable en móvil/desktop
+- 💾 **IndexedDB** - Almacenamiento local, datos persistentes
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- React 19 + TypeScript
+- Vite 7
+- Tailwind CSS 4
+- Zustand (estado global)
+- Dexie (IndexedDB wrapper)
+- Recharts (gráficos)
+- TanStack Virtual (tablas virtuales)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Desarrollo
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Build
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
+
+## Deploy
+
+El deploy es automático vía GitHub Actions al hacer push a `main`.
+
+## Estructura de Datos
+
+### DP (Distribution Points)
+- Información de construcción (Tiefbau)
+- Estado de soplado y fusiones
+- Fechas de inicio/fin
+
+### Conexiones
+- Datos del cliente (calle, número, KA)
+- Estado de instalación (8 estados posibles)
+- IDs de cable y fechas
+
+### Reportes de Campo
+- **Soplado**: metros, color de miniducto, certificación
+- **Fusiones**: cantidad de fusiones, técnico, incidencias

@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/glasfaser-tracker/sw.js', { scope: '/glasfaser-tracker/' })})}

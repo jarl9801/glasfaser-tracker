@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Glasfaser Tracker</title>
+    <script>
+      // SPA redirect for GitHub Pages
+      const path = window.location.pathname;
+      const base = '/glasfaser-tracker/';
+      if (path.startsWith(base)) {
+        const redirect = base + '?redirect=' + encodeURIComponent(path.slice(base.length));
+        window.location.replace(redirect);
+      }
+    </script>
+  </head>
+  <body>
+    <p>Redirecting...</p>
+  </body>
+</html>

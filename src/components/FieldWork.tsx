@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, CheckCircle, Wrench, Zap } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Wrench, Zap, Cloud } from 'lucide-react'
 import { usePOPData } from '../lib/usePOPData'
 import { StatCard } from './ui/StatCard'
 import { POPSelector } from './ui/POPSelector'
+import { SheetsSync } from './SheetsSync'
 
 export function FieldWork() {
   const { pops, blowings, splicings } = usePOPData()
@@ -27,10 +28,19 @@ export function FieldWork() {
 
   if (blowings.length === 0 && splicings.length === 0) {
     return (
-      <div className="flex h-[60vh] flex-col items-center justify-center text-gray-400">
-        <Wrench size={48} className="mb-4" />
-        <p className="text-lg font-medium">Keine Feldberichte</p>
-        <p className="text-sm">Importiere die CSV-Dateien der Techniker.</p>
+      <div>
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">Feldberichte</h2>
+          <POPSelector pops={pops} />
+        </div>
+        
+        <SheetsSync />
+        
+        <div className="mt-6 flex h-[40vh] flex-col items-center justify-center rounded-xl bg-gray-50 text-gray-400">
+          <Cloud size={48} className="mb-4" />
+          <p className="text-lg font-medium">Keine Feldberichte</p>
+          <p className="text-sm">Sincroniza desde Google Sheets o importiere CSV-Dateien.</p>
+        </div>
       </div>
     )
   }
@@ -40,6 +50,10 @@ export function FieldWork() {
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900">Feldberichte</h2>
         <POPSelector pops={pops} />
+      </div>
+      
+      <div className="mb-6">
+        <SheetsSync />
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -58,7 +58,7 @@ export interface SyncResult {
   rawError?: string;
 }
 
-async function syncFromSingleUrl(url: string, name: string): Promise<{ 
+async function syncFromSingleUrl(url: string, _name: string): Promise<{ 
   blowings: FieldBlowing[], 
   splicings: FieldSplicing[], 
   blowingsRA: FieldBlowing[],

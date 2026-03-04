@@ -49,7 +49,7 @@ async function fetchCsv(sheetId: string, sheetName: string): Promise<any[]> {
       header: true,
       skipEmptyLines: true,
       complete: (results) => resolve(results.data),
-      error: (err) => reject(err)
+      error: (err: Error) => reject(err)
     });
   });
 }

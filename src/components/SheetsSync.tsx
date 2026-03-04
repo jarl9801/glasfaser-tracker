@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, Cloud, CheckCircle, AlertCircle, Database } from 'lucide-react';
+import { RefreshCw, Cloud } from 'lucide-react';
 import { syncFromGoogleSheets } from '../lib/sheets/csv-export';
 import { useAppStore } from '../store/appStore';
 

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Upload, FileText, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Upload, FileText, CheckCircle, AlertCircle, Loader2, Plus, RefreshCw } from 'lucide-react'
 import { parseAndImportFile, type ParseResult } from '../lib/csvParser'
 import { useAppStore } from '../store/appStore'
 
@@ -40,8 +40,10 @@ export function ImportCSV() {
       setLoading(false)
 
       if (newResults.length > 0) {
-        const total = newResults.reduce((sum, r) => sum + r.rowCount, 0)
-        showToast(`${total} Datensätze importiert.`)
+        const totalRows = newResults.reduce((sum, r) => sum + r.rowCount, 0)
+        const totalUpdated = newResults.reduce((sum, r) => sum + r.updated, 0)
+        const totalInserted = newResults.reduce((sum, r) => sum + r.inserted, 0)
+        showToast(`${totalRows} Datensätze: ${totalInserted} neu, ${totalUpdated} aktualisiert`)
       }
     },
     [showToast]
@@ -123,12 +125,23 @@ export function ImportCSV() {
                   <p className="text-xs text-gray-500">
                     {r.projektName} — {r.rowCount} Datensätze
                   </p>
+                  <div className="mt-1 flex gap-3 text-xs">
+                    {r.inserted > 0 && (
+                      <span className="flex items-center gap-1 text-green-600">
+                        <Plus size={12} /> {r.inserted} neu
+                      </span>
+                    )}
+                    {r.updated > 0 && (
+                      <span className="flex items-center gap-1 text-blue-600">
+                        <RefreshCw size={12} /> {r.updated} aktualisiert
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <CheckCircle size={20} className="text-green-500" />
               </div>
             ))}
-          </div>
-        </div>
+          </div>        </div>
       )}
 
       <div className="mt-8 rounded-xl bg-blue-50 p-5 border border-blue-100">
@@ -154,6 +167,12 @@ export function ImportCSV() {
             <p className="text-xs font-medium text-blue-700">5. Fusiones DP (Campo)</p>
             <p className="mt-0.5 text-xs text-blue-600">DP, Fusiones, Técnico, Incidencias</p>
           </div>
+        </div>
+        <div className="mt-4 p-3 bg-amber-50 rounded border border-amber-200">
+          <p className="text-xs text-amber-800">
+            <strong>Multi-Proyecto:</strong> Los datos se importan sin borrar proyectos existentes. 
+            Se actualizan registros existentes y se agregan nuevos.
+          </p>
         </div>
       </div>
     </div>

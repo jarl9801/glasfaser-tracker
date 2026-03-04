@@ -14,7 +14,9 @@ const SPLICING_HEADERS = ['Fusiones', 'Técnico Responsable', 'Registro Fotograf
 
 function detectCSVType(headers: string[]): CSVType {
   const normalized = headers.map(h => h.trim())
+  // Blowing RD has KA cliente column; RA does not
   if (BLOWING_HEADERS.every(h => normalized.includes(h))) return 'blowing'
+  // Blowing RA: has Metros Soplados but no KA cliente, no DP, no Calle
   if (BLOWING_RA_HEADERS.every(h => normalized.includes(h)) && !normalized.includes('KA cliente')) return 'blowing_ra'
   if (SPLICING_HEADERS.every(h => normalized.includes(h)) && !normalized.includes('Metros Soplados')) return 'splicing'
   if (CONNECTION_HEADERS.every(h => normalized.includes(h))) return 'connection'
@@ -34,10 +36,11 @@ export interface ParseResult {
   projektNummer: number
   projektName: string
   label: string
-  updated: number
-  inserted: number
 }
 
+/**
+ * Parse and import a file. Supports .csv and .xlsx/.xls
+ */
 export async function parseAndImportFile(file: File): Promise<ParseResult> {
   const ext = file.name.split('.').pop()?.toLowerCase()
   if (ext === 'xlsx' || ext === 'xls') {
@@ -112,8 +115,6 @@ async function processRows(
   let projektNummer = 0
   let projektName = ''
   let label = ''
-  let updated = 0
-  let inserted = 0
 
   if (type === 'dp' || type === 'connection') {
     projektNummer = parseInt(rows[0]['Projektnummer'] || rows[0]['Projekt- nummer'] || '0')
@@ -134,129 +135,76 @@ async function processRows(
     const projectId = project!.id!
 
     if (type === 'dp') {
-      const result = await importDPs(rows, projectId)
+      await importDPs(rows, projectId)
       label = 'Verteilerpunkte (DP)'
-      updated = result.updated
-      inserted = result.inserted
     } else {
-      const result = await importConnections(rows, projectId)
+      await importConnections(rows, projectId)
       label = 'Anschlüsse'
-      updated = result.updated
-      inserted = result.inserted
     }
   } else if (type === 'blowing') {
-    const result = await importFieldBlowings(rows)
+    await importFieldBlowings(rows)
     label = 'Reporte Soplado RD (campo)'
-    updated = result.updated
-    inserted = result.inserted
   } else if (type === 'blowing_ra') {
-    const result = await importFieldBlowingsRA(rows)
+    await importFieldBlowingsRA(rows)
     label = 'Reporte Soplado RA (troncal)'
-    updated = result.updated
-    inserted = result.inserted
   } else if (type === 'splicing') {
-    const result = await importFieldSplicings(rows)
+    await importFieldSplicings(rows)
     label = 'Reporte Fusiones (campo)'
-    updated = result.updated
-    inserted = result.inserted
   }
 
-  return { type, rowCount: rows.length, projektNummer, projektName, label, updated, inserted }
+  return { type, rowCount: rows.length, projektNummer, projektName, label }
 }
 
-// Import DPs con upsert - NO borra otros proyectos
-async function importDPs(rows: Record<string, string>[], projectId: number): Promise<{updated: number, inserted: number}> {
-  let updated = 0
-  let inserted = 0
-  
-  // Obtener DPs existentes de este proyecto para verificar updates
-  const existingDPs = await db.distributionPoints.where('projectId').equals(projectId).toArray()
-  const existingMap = new Map(existingDPs.map(dp => [dp.dp, dp]))
+async function importDPs(rows: Record<string, string>[], projectId: number) {
+  await db.distributionPoints.where('projectId').equals(projectId).delete()
 
-  for (const row of rows) {
-    const dpData: DistributionPoint = {
-      projectId,
-      dp: row['DP'] || '',
-      startTiefbau: row['Start Tiefbau'] || '',
-      endeTiefbau: row['Ende Tiefbau'] || '',
-      tiefbauFertig: row['Tiefbau Fertig (1= Fertig, 0=Nicht Fertig)'] === '1',
-      kabelsorte: row['Kabelsorte'] || '',
-      einblasen: (row['Einblasen AP - DP (Gereed = Fertig)'] || '').trim(),
-      spleissenAP: (row['Spleißen AP (Gereed = Fertig)'] || '').trim(),
-      spleisseDPBereit: (row['Spleiße DP bereit'] || '').trim(),
-    }
+  const dps: DistributionPoint[] = rows.map((row) => ({
+    projectId,
+    dp: row['DP'] || '',
+    startTiefbau: row['Start Tiefbau'] || '',
+    endeTiefbau: row['Ende Tiefbau'] || '',
+    tiefbauFertig: row['Tiefbau Fertig (1= Fertig, 0=Nicht Fertig)'] === '1',
+    kabelsorte: row['Kabelsorte'] || '',
+    einblasen: (row['Einblasen AP - DP (Gereed = Fertig)'] || '').trim(),
+    spleissenAP: (row['Spleißen AP (Gereed = Fertig)'] || '').trim(),
+    spleisseDPBereit: (row['Spleiße DP bereit'] || '').trim(),
+  }))
 
-    const existing = existingMap.get(dpData.dp)
-    if (existing?.id) {
-      // Update
-      await db.distributionPoints.update(existing.id, dpData)
-      updated++
-    } else {
-      // Insert
-      await db.distributionPoints.add(dpData)
-      inserted++
-    }
-  }
-
-  return { updated, inserted }
+  await db.distributionPoints.bulkAdd(dps)
 }
 
-// Import Connections con upsert - NO borra otros proyectos
-async function importConnections(rows: Record<string, string>[], projectId: number): Promise<{updated: number, inserted: number}> {
-  let updated = 0
-  let inserted = 0
-  
-  // Obtener conexiones existentes de este proyecto
-  const existingConns = await db.connections.where('projectId').equals(projectId).toArray()
-  const existingMap = new Map(existingConns.map(c => [`${c.auftragsnummer}-${c.dp}`, c]))
+async function importConnections(rows: Record<string, string>[], projectId: number) {
+  await db.connections.where('projectId').equals(projectId).delete()
 
-  for (const row of rows) {
-    const key = `${row['Auftragsnummer'] || ''}-${row['DP'] || ''}`
-    const connData: Connection = {
-      projectId,
-      auftragsnummer: row['Auftragsnummer'] || '',
-      dp: row['DP'] || '',
-      strasse: row['Straße'] || row['Strasse'] || '',
-      hausnummer: row['Hausnummer'] || '',
-      hausnummernzusatz: row['Hausnummernzusatz'] || '',
-      unit: parseInt(row['Unit'] || '0') || 0,
-      cableId: row['Cable ID (From TRI)'] || '',
-      grundNA: row['GrundNA'] || '',
-      anschlussstatus: parseInt(row['ANSCHLUSSSTATUS'] || '0') || 0,
-      farbeRohre: row['Farbe Rohre'] || '',
-      datumHausanschluss: row['Datum Hausanschluss'] || '',
-      status: (row['Status'] || '').trim(),
-      trenchIPFiber: parseInt(row['Trench-IP-fiber'] || '0') || 0,
-      trenchTVFiber: parseInt(row['Trench-TV-fiber'] || '0') || 0,
-      hasTVFiber: parseInt(row['HAS-TV-fiber'] || '0') || 0,
-    }
+  const connections: Connection[] = rows.map((row) => ({
+    projectId,
+    auftragsnummer: row['Auftragsnummer'] || '',
+    dp: row['DP'] || '',
+    strasse: row['Straße'] || row['Strasse'] || '',
+    hausnummer: row['Hausnummer'] || '',
+    hausnummernzusatz: row['Hausnummernzusatz'] || '',
+    unit: parseInt(row['Unit'] || '0') || 0,
+    cableId: row['Cable ID (From TRI)'] || '',
+    grundNA: row['GrundNA'] || '',
+    anschlussstatus: parseInt(row['ANSCHLUSSSTATUS'] || '0') || 0,
+    farbeRohre: row['Farbe Rohre'] || '',
+    datumHausanschluss: row['Datum Hausanschluss'] || '',
+    status: (row['Status'] || '').trim(),
+    trenchIPFiber: parseInt(row['Trench-IP-fiber'] || '0') || 0,
+    trenchTVFiber: parseInt(row['Trench-TV-fiber'] || '0') || 0,
+    hasTVFiber: parseInt(row['HAS-TV-fiber'] || '0') || 0,
+  }))
 
-    const existing = existingMap.get(key)
-    if (existing?.id) {
-      await db.connections.update(existing.id, connData)
-      updated++
-    } else {
-      await db.connections.add(connData)
-      inserted++
-    }
-  }
-
-  return { updated, inserted }
+  await db.connections.bulkAdd(connections)
 }
 
-// Import Field Blowings con upsert por timestamp+DP
-async function importFieldBlowings(rows: Record<string, string>[]): Promise<{updated: number, inserted: number}> {
+async function importFieldBlowings(rows: Record<string, string>[]) {
   const connections = await db.connections.toArray()
   const knownStreets = [...new Set(connections.map(c => c.strasse))].filter(Boolean)
-  
-  let updated = 0
-  let inserted = 0
 
-  // Obtener blowings existentes para verificar duplicados
-  const existingBlowings = await db.fieldBlowings.toArray()
-  const existingMap = new Map(existingBlowings.map(b => [`${b.timestamp}-${b.dp}-${b.kaCliente}`, b]))
+  await db.fieldBlowings.clear()
 
-  for (const row of rows) {
+  const blowings: FieldBlowing[] = rows.map((row) => {
     const dpRaw = row['DP'] || ''
     const project = row['Código de Proyecto'] || ''
     const dp = normalizeDP(dpRaw, project)
@@ -276,7 +224,7 @@ async function importFieldBlowings(rows: Record<string, string>[]): Promise<{upd
       }
     }
 
-    const blowingData: FieldBlowing = {
+    return {
       timestamp: row['Timestamp'] || '',
       codigoProyecto: project,
       dp,
@@ -297,32 +245,25 @@ async function importFieldBlowings(rows: Record<string, string>[]): Promise<{upd
       certificado: (row['Certificado'] || '').toUpperCase() === 'TRUE',
       matchConfidence,
     }
+  })
 
-    const key = `${blowingData.timestamp}-${blowingData.dp}-${blowingData.kaCliente}`
-    const existing = existingMap.get(key)
-    if (existing?.id) {
-      await db.fieldBlowings.update(existing.id, blowingData)
-      updated++
-    } else {
-      await db.fieldBlowings.add(blowingData)
-      inserted++
-    }
-  }
-
-  return { updated, inserted }
+  await db.fieldBlowings.bulkAdd(blowings)
 }
 
-// Import Field Blowings RA con upsert
-async function importFieldBlowingsRA(rows: Record<string, string>[]): Promise<{updated: number, inserted: number}> {
-  let updated = 0
-  let inserted = 0
-  
-  const existingBlowings = await db.fieldBlowings.toArray()
-  const existingMap = new Map(existingBlowings.map(b => [`${b.timestamp}-${b.codigoProyecto}-${b.tecnico}`, b]))
+// Soplado RA (44/96/144/288 fibers) - trunk blowing, no DP/Calle/KA
+async function importFieldBlowingsRA(rows: Record<string, string>[]) {
+  // Store as field blowings with type indicator (no DP, no street)
+  const existing = await db.fieldBlowings.toArray()
+  // Keep RD blowings, only clear RA ones (those without a DP)
+  // const rdIds = existing// .filter(b => b.dp).map(b => b.id!).filter(Boolean)
 
-  for (const row of rows) {
+  // Delete only RA entries (those without DP)
+  const raIds = existing.filter(b => !b.dp && !b.kaCliente).map(b => b.id!).filter(Boolean)
+  if (raIds.length > 0) await db.fieldBlowings.bulkDelete(raIds)
+
+  const blowings: FieldBlowing[] = rows.map((row) => {
     const colorRaw = row['Color miniducto'] || ''
-    const blowingData: FieldBlowing = {
+    return {
       timestamp: row['Timestamp'] || '',
       codigoProyecto: row['Código de Proyecto'] || '',
       dp: '',
@@ -343,35 +284,20 @@ async function importFieldBlowingsRA(rows: Record<string, string>[]): Promise<{u
       certificado: (row['Certificado'] || '').toUpperCase() === 'TRUE',
       matchConfidence: 0,
     }
+  })
 
-    const key = `${blowingData.timestamp}-${blowingData.codigoProyecto}-${blowingData.tecnico}`
-    const existing = existingMap.get(key)
-    if (existing?.id) {
-      await db.fieldBlowings.update(existing.id, blowingData)
-      updated++
-    } else {
-      await db.fieldBlowings.add(blowingData)
-      inserted++
-    }
-  }
-
-  return { updated, inserted }
+  await db.fieldBlowings.bulkAdd(blowings)
 }
 
-// Import Field Splicings con upsert
-async function importFieldSplicings(rows: Record<string, string>[]): Promise<{updated: number, inserted: number}> {
-  let updated = 0
-  let inserted = 0
-  
-  const existingSplicings = await db.fieldSplicings.toArray()
-  const existingMap = new Map(existingSplicings.map(s => [`${s.timestamp}-${s.dp}-${s.tecnico}`, s]))
+async function importFieldSplicings(rows: Record<string, string>[]) {
+  await db.fieldSplicings.clear()
 
-  for (const row of rows) {
+  const splicings: FieldSplicing[] = rows.map((row) => {
     const dpRaw = row['DP'] || ''
     const project = row['Código de Proyecto'] || ''
     const dp = normalizeDP(dpRaw, project)
 
-    const splicingData: FieldSplicing = {
+    return {
       timestamp: row['Timestamp'] || '',
       codigoProyecto: project,
       dp,
@@ -384,17 +310,7 @@ async function importFieldSplicings(rows: Record<string, string>[]): Promise<{up
       fotos: row['Fotos del Trabajo'] || '',
       registroFotografico: row['Registro Fotografico'] || '',
     }
+  })
 
-    const key = `${splicingData.timestamp}-${splicingData.dp}-${splicingData.tecnico}`
-    const existing = existingMap.get(key)
-    if (existing?.id) {
-      await db.fieldSplicings.update(existing.id, splicingData)
-      updated++
-    } else {
-      await db.fieldSplicings.add(splicingData)
-      inserted++
-    }
-  }
-
-  return { updated, inserted }
+  await db.fieldSplicings.bulkAdd(splicings)
 }

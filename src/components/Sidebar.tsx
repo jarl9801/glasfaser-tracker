@@ -1,4 +1,4 @@
-import { LayoutDashboard, Network, Cable, Upload, Wrench, ClipboardCheck, AlertTriangle } from 'lucide-react'
+import { LayoutDashboard, Network, Cable, Upload, Wrench, ClipboardCheck, AlertTriangle, BarChart2 } from 'lucide-react'
 import { useAppStore } from '../store/appStore'
 import type { ViewName } from '../types'
 
@@ -8,7 +8,7 @@ const NAV_ITEMS: { view: ViewName; label: string; icon: typeof LayoutDashboard; 
   { view: 'connections', label: 'Anschlüsse', icon: Cable },
   { view: 'fieldwork', label: 'Feldberichte', icon: Wrench, section: 'Campo' },
   { view: 'discrepancies', label: 'Discrepancias', icon: AlertTriangle },
-  { view: 'coverage', label: 'Cobertura', icon: PieChart },
+  { view: 'coverage', label: 'Cobertura', icon: BarChart2 },
   { view: 'control', label: 'Control', icon: ClipboardCheck, section: 'Sistema' },
   { view: 'import', label: 'CSV Import', icon: Upload },
 ]

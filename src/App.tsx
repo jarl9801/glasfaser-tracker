@@ -6,6 +6,7 @@ import { FieldWork } from './components/FieldWork'
 import { ControlPanel } from './components/ControlPanel'
 import { ImportCSV } from './components/ImportCSV'
 import { DiscrepanciesView } from './components/DiscrepanciesView'
+import { ClientCoverageView } from './components/ClientCoverageView'
 import { useAppStore } from './store/appStore'
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
       {view === 'control' && <ControlPanel />}
       {view === 'import' && <ImportCSV />}
       {view === 'discrepancies' && <DiscrepanciesView />}
+      {view === 'coverage' && <ClientCoverageView />}
     </Layout>
   )
 }

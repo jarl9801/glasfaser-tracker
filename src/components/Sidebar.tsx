@@ -8,6 +8,7 @@ const NAV_ITEMS: { view: ViewName; label: string; icon: typeof LayoutDashboard; 
   { view: 'connections', label: 'Anschlüsse', icon: Cable },
   { view: 'fieldwork', label: 'Feldberichte', icon: Wrench, section: 'Campo' },
   { view: 'discrepancies', label: 'Discrepancias', icon: AlertTriangle },
+  { view: 'coverage', label: 'Cobertura', icon: BarChart2 },
   { view: 'control', label: 'Control', icon: ClipboardCheck, section: 'Sistema' },
   { view: 'import', label: 'CSV Import', icon: Upload },
 ]

@@ -91,7 +91,7 @@ export type ConnectionStatus =
   | 'Abliefern'
   | string
 
-export type ViewName = 'dashboard' | 'dps' | 'connections' | 'fieldwork' | 'control' | 'import' | 'discrepancies'
+export type ViewName = 'dashboard' | 'dps' | 'connections' | 'fieldwork' | 'control' | 'import' | 'discrepancies' | 'coverage'
 
 export const STATUS_COLORS: Record<string, string> = {
   Arbeitsvorbereitung: '#9ca3af',

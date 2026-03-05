@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Upload, Download, CheckCircle, XCircle, BarChart2, RefreshCw } from 'lucide-react'
+import { Upload, Download, CheckCircle, XCircle, RefreshCw } from 'lucide-react'
 import { db } from '../lib/db'
 import * as XLSX from 'xlsx'
 
